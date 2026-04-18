@@ -6,6 +6,7 @@ import com.sau.mentorship.user.repository.UserRepository;
 import com.sau.mentorship.connection.service.ConnectionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -21,7 +22,7 @@ public class ConnectionController {
     private final UserRepository userRepository; // To fetch ID from UserDetails
 
     @PostMapping("/request/{alumniId}")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<String> requestConnection(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("alumniId") Long alumniId,
@@ -32,7 +33,7 @@ public class ConnectionController {
     }
 
     @PutMapping("/{connectionId}/accept")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ALUMNI')")
+    @PreAuthorize("hasRole('ALUMNI')")
     public ResponseEntity<String> acceptConnection(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("connectionId") Long connectionId) {
@@ -41,7 +42,7 @@ public class ConnectionController {
     }
 
     @PutMapping("/{connectionId}/reject")
-    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ALUMNI')")
+    @PreAuthorize("hasRole('ALUMNI')")
     public ResponseEntity<String> rejectConnection(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("connectionId") Long connectionId) {
@@ -50,6 +51,7 @@ public class ConnectionController {
     }
 
     @GetMapping("/student")
+    @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<ConnectionResponseDTO>> getStudentConnections(
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
@@ -57,6 +59,7 @@ public class ConnectionController {
     }
 
     @GetMapping("/alumni")
+    @PreAuthorize("hasRole('ALUMNI')")
     public ResponseEntity<List<ConnectionResponseDTO>> getAlumniConnections(
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
