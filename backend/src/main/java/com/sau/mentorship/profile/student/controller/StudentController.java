@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class StudentController {
     private final StudentService studentService;
+    private final com.sau.mentorship.user.repository.UserRepository userRepository;
 
     @PutMapping("/update-profile")
     public ResponseEntity<String> updateStudentProfile(
@@ -22,4 +23,14 @@ public class StudentController {
         return ResponseEntity.ok("Student profile updated successfully.");
     }
 
+    @org.springframework.security.access.prepost.PreAuthorize("hasRole('ALUMNI')")
+    @GetMapping("/{studentId}")
+    public ResponseEntity<com.sau.mentorship.profile.student.DTO.response.StudentDetailResponseDTO> getStudentDetail(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable("studentId") Long studentId) {
+
+        com.sau.mentorship.user.entity.User loggedInAlumni = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow();
+        return ResponseEntity.ok(studentService.getStudentDetailForAlumni(studentId, loggedInAlumni.getId()));
+    }
 }
