@@ -7,7 +7,7 @@ import com.sau.mentorship.profile.alumni.entity.AlumniProfile;
 import com.sau.mentorship.profile.alumni.mapper.AlumniMapper;
 import com.sau.mentorship.user.entity.Skill;
 import com.sau.mentorship.user.entity.User;
-import com.sau.mentorship.users2.exception.UserNotFoundException;
+import com.sau.mentorship.common.exception.UserNotFoundException;
 import com.sau.mentorship.profile.alumni.repository.AlumniProfileRepository;
 import com.sau.mentorship.user.repository.SkillRepository;
 import com.sau.mentorship.user.repository.UserRepository;

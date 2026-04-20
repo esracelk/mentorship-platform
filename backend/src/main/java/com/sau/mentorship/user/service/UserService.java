@@ -2,7 +2,7 @@ package com.sau.mentorship.user.service;
 
 import com.sau.mentorship.auth.DTO.ChangePasswordRequestDTO;
 import com.sau.mentorship.user.entity.User;
-import com.sau.mentorship.users2.exception.UserNotFoundException;
+import com.sau.mentorship.common.exception.UserNotFoundException;
 import com.sau.mentorship.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

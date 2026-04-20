@@ -26,7 +26,7 @@ public class AlumniController {
         return ResponseEntity.ok(alumniService.getAllAlumni());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{alumniId}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<AlumniDetailResponseDTO> getAlumniById(@PathVariable("alumniId") Long alumniId) {
         return ResponseEntity.ok(alumniService.getAlumniById(alumniId));

@@ -13,4 +13,6 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
     List<Connection> findByAlumniId(Long alumniId);
 
     List<Connection> findByStudentId(Long studentId);
+
+    boolean existsByStudentIdAndAlumniId(Long studentId, Long alumniId);
 }
