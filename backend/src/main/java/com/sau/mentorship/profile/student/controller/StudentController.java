@@ -34,8 +34,15 @@ public class StudentController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("studentId") Long studentId) {
 
-       User loggedInAlumni = userRepository.findByEmail(userDetails.getUsername())
+        User loggedInAlumni = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow();
         return ResponseEntity.ok(studentService.getStudentDetailForAlumni(studentId, loggedInAlumni.getId()));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<StudentDetailResponseDTO> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = userRepository.findByEmail(userDetails.getUsername()).orElseThrow().getId();
+        return ResponseEntity.ok(studentService.getStudentById(userId));
     }
 }

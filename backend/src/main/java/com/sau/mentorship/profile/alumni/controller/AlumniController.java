@@ -4,6 +4,7 @@ import com.sau.mentorship.profile.alumni.DTO.request.UpdateAlumniProfileRequestD
 import com.sau.mentorship.profile.alumni.DTO.response.AlumniDetailResponseDTO;
 import com.sau.mentorship.profile.alumni.DTO.response.AlumniListResponseDTO;
 import com.sau.mentorship.profile.alumni.service.AlumniService;
+import com.sau.mentorship.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +20,7 @@ import java.util.List;
 public class AlumniController {
 
     private final AlumniService alumniService;
+    private final UserRepository userRepository;
 
     @GetMapping
     @PreAuthorize("hasRole('STUDENT')")
@@ -30,6 +32,13 @@ public class AlumniController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<AlumniDetailResponseDTO> getAlumniById(@PathVariable("alumniId") Long alumniId) {
         return ResponseEntity.ok(alumniService.getAlumniById(alumniId));
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('ALUMNI')")
+    public ResponseEntity<AlumniDetailResponseDTO> getMyProfile(@AuthenticationPrincipal UserDetails userDetails) {
+        Long userId = userRepository.findByEmail(userDetails.getUsername()).orElseThrow().getId();
+        return ResponseEntity.ok(alumniService.getAlumniById(userId));
     }
 
     @PutMapping("/update")
