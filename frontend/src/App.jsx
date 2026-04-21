@@ -11,6 +11,7 @@ import Profile from './pages/Profile';
 import StudentDetail from './pages/StudentDetail';
 import MyRequests from './pages/MyRequests';
 import Home from './pages/Home';
+import AiMentor from './pages/AiMentor';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="profile" element={<Profile />} />
               <Route path="students/:id" element={<StudentDetail />} />
+              <Route path="ai-mentor" element={<AiMentor />} />
             </Route>
 
           </Route>

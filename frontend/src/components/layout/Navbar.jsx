@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
     const { role, isAuthenticated, logout } = useAuth();
@@ -17,6 +17,12 @@ const Navbar = () => {
     const navLinks = () => (
         <>
             <Link to="/" onClick={() => setMobileOpen(false)} className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Ana Sayfa</Link>
+            
+            {isAuthenticated && (
+                <Link to="/ai-mentor" onClick={() => setMobileOpen(false)} className="text-blue-600 hover:text-blue-700 font-bold flex items-center gap-1 transition-all">
+                    <Sparkles size={16} /> AI Mentor
+                </Link>
+            )}
 
             {isAuthenticated && role === 'STUDENT' && (
                 <Link to="/mentors" onClick={() => setMobileOpen(false)} className="text-gray-700 hover:text-blue-600 font-medium transition-colors">Mentor Bul</Link>
