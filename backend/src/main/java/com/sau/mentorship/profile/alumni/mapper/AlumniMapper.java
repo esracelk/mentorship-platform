@@ -14,7 +14,6 @@ public interface AlumniMapper {
     @Mapping(target = "skills", expression = "java(profile.getUser().getSkills().stream().map(skill -> skill.getName()).limit(4).toList())")
     AlumniListResponseDTO toDto(AlumniProfile profile);
 
-    // burda alumni profile'dan user bilgilerine erişmek için mapping yapıyoruz
     @Mapping(source = "user.firstName", target = "firstName")
     @Mapping(source = "user.lastName", target = "lastName")
     @Mapping(source = "user.aboutMe", target = "aboutMe")
