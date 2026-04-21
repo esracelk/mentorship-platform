@@ -1,4 +1,4 @@
-package com.sau.mentorship.users2.service;
+package com.sau.mentorship.email.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

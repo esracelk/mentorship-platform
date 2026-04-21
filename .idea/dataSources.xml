@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="mentorship_db@localhost" uuid="9bc154d7-4528-4e0c-8b85-b71d1b7cbfcc">
+    <data-source source="LOCAL" name="mentorship_db@localhost" uuid="4b4476ed-1c69-498c-a38d-f4b0269aa30e">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
-      <imported>true</imported>
-      <remarks>$PROJECT_DIR$/backend/src/main/resources/application.properties</remarks>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
       <jdbc-url>jdbc:postgresql://localhost:5432/mentorship_db</jdbc-url>
       <jdbc-additional-properties>

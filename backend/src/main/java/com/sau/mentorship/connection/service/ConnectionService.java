@@ -5,11 +5,11 @@ import com.sau.mentorship.profile.alumni.entity.AlumniProfile;
 import com.sau.mentorship.connection.entity.Connection;
 import com.sau.mentorship.profile.student.entity.StudentProfile;
 import com.sau.mentorship.connection.enums.ConnectionStatus;
-import com.sau.mentorship.users2.exception.UserNotFoundException;
+import com.sau.mentorship.common.exception.UserNotFoundException;
 import com.sau.mentorship.profile.alumni.repository.AlumniProfileRepository;
 import com.sau.mentorship.connection.repository.ConnectionRepository;
 import com.sau.mentorship.profile.student.repository.StudentProfileRepository;
-import com.sau.mentorship.users2.service.EmailService;
+import com.sau.mentorship.email.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +33,10 @@ public class ConnectionService {
                 .orElseThrow(() -> new UserNotFoundException("Student not found"));
         AlumniProfile alumni = alumniProfileRepository.findById(alumniId)
                 .orElseThrow(() -> new UserNotFoundException("Alumni not found"));
+
+        if (connectionRepository.existsByStudentIdAndAlumniId(studentId, alumniId)) {
+            throw new IllegalStateException("Bu mentora zaten bir bağlantı isteği gönderdiniz!");
+        }
 
         Connection connection = Connection.builder()
                 .student(student)

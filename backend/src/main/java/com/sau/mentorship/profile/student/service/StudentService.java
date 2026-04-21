@@ -6,7 +6,7 @@ import com.sau.mentorship.connection.entity.Connection;
 import com.sau.mentorship.user.entity.Skill;
 import com.sau.mentorship.profile.student.entity.StudentProfile;
 import com.sau.mentorship.user.entity.User;
-import com.sau.mentorship.users2.exception.UserNotFoundException;
+import com.sau.mentorship.common.exception.UserNotFoundException;
 import com.sau.mentorship.user.repository.SkillRepository;
 import com.sau.mentorship.profile.student.repository.StudentProfileRepository;
 import com.sau.mentorship.user.repository.UserRepository;
@@ -80,17 +80,27 @@ public class StudentService {
             throw new IllegalArgumentException("Sadece size istek atan öğrencilerin profillerini görebilirsiniz!");
         }
 
-        StudentProfile studentProfile = studentProfileRepository.findById(studentId)
-                .orElseThrow(() -> new UserNotFoundException("Student not found"));
+        // DRY: Profil oluşturma kodunu tekrar yazmak yerine generic metodu çağırıyoruz!
+        return getStudentById(studentId);
+    }
+
+    public StudentDetailResponseDTO getStudentById(Long id) {
+        StudentProfile studentProfile = studentProfileRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("Student profile not found"));
+        User user = studentProfile.getUser();
 
         return StudentDetailResponseDTO.builder()
-                .firstName(studentProfile.getUser().getFirstName())
-                .lastName(studentProfile.getUser().getLastName())
-                .email(studentProfile.getUser().getEmail())
-                .aboutMe(studentProfile.getUser().getAboutMe())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .aboutMe(user.getAboutMe())
+                .skills(user.getSkills().stream().map(skill -> skill.getName()).toList())
                 .department(studentProfile.getDepartment())
                 .grade(studentProfile.getGrade())
                 .experience(studentProfile.getExperience())
+                .employmentStatus(
+                        studentProfile.getEmploymentStatus() != null ? studentProfile.getEmploymentStatus().name()
+                                : null)
                 .linkedinUrl(studentProfile.getLinkedinUrl())
                 .build();
     }
