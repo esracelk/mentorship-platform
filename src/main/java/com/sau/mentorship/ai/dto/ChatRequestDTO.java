@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRequestDTO {
     private String question;
+    private String chatId;
 }
