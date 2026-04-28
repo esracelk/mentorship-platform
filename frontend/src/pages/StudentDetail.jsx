@@ -63,7 +63,7 @@ const StudentDetail = () => {
                     <div className="flex-shrink-0">
                         <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-tr from-green-400 to-emerald-600 p-1.5 shadow-xl">
                             <img
-                                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstName)}+${encodeURIComponent(student.lastName)}&background=ffffff&color=059669&size=200`}
+                                src={student.profilePhotoBase64 || `https://ui-avatars.com/api/?name=${encodeURIComponent(student.firstName)}+${encodeURIComponent(student.lastName)}&background=ffffff&color=059669&size=200`}
                                 alt="Avatar"
                                 className="w-full h-full rounded-full border-4 border-white object-cover"
                             />

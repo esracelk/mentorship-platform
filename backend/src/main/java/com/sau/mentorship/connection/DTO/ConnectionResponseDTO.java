@@ -16,6 +16,7 @@ public class ConnectionResponseDTO {
     private String studentName;
     private Long alumniId;
     private String alumniName;
+    private String alumniEmail;
     private ConnectionStatus status;
     private String message;
     private LocalDateTime requestedAt;

@@ -9,7 +9,7 @@ import com.sau.mentorship.common.exception.UserNotFoundException;
 import com.sau.mentorship.profile.alumni.repository.AlumniProfileRepository;
 import com.sau.mentorship.connection.repository.ConnectionRepository;
 import com.sau.mentorship.profile.student.repository.StudentProfileRepository;
-import com.sau.mentorship.email.service.EmailService;
+import com.sau.mentorship.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +25,7 @@ public class ConnectionService {
     private final ConnectionRepository connectionRepository;
     private final StudentProfileRepository studentProfileRepository;
     private final AlumniProfileRepository alumniProfileRepository;
-    private final EmailService emailService;
+    private final NotificationService notificationService;
 
     @Transactional
     public String requestConnection(Long studentId, Long alumniId, String message) {
@@ -47,6 +47,13 @@ public class ConnectionService {
                 .build();
 
         connectionRepository.save(connection);
+
+        // Mentore in-app bildirim gönder
+        String studentName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+        String notifMsg = studentName + " size mentorluk isteği gönderdi."
+                + (message != null && !message.isBlank() ? " Mesaj: \"" + message + "\"" : "");
+        notificationService.createNotification(alumni.getUser(), notifMsg);
+
         return "Connection request sent successfully.";
     }
 
@@ -74,12 +81,17 @@ public class ConnectionService {
         connection.setActedUponAt(LocalDateTime.now());
         connectionRepository.save(connection);
 
-        // Send Email via underlying service
-        String studentEmail = connection.getStudent().getUser().getEmail();
+        // Menteee in-app bildirim gönder
         String alumniName = alumni.getUser().getFirstName() + " " + alumni.getUser().getLastName();
-        emailService.sendConnectionAcceptedEmail(studentEmail, alumniName);
+        String alumniEmail = alumni.getUser().getEmail();
+        notificationService.createNotification(
+                connection.getStudent().getUser(),
+                alumniName + " mentorluk isteğinizi kabul etti! "
+                        + "İlk görüşmenizi gerçekleştirmek için mentorunuzla "
+                        + alumniEmail + " e-posta adresi üzerinden iletişime geçebilirsiniz."
+        );
 
-        return "Connection accepted. Email notification sent.";
+        return "Connection accepted. Notification sent.";
     }
 
     @Transactional
@@ -95,7 +107,15 @@ public class ConnectionService {
         connection.setActedUponAt(LocalDateTime.now());
         connectionRepository.save(connection);
 
-        return "Connection rejected.";
+        // Menteee ret bildirimi gönder
+        String alumniName = connection.getAlumni().getUser().getFirstName() + " "
+                + connection.getAlumni().getUser().getLastName();
+        notificationService.createNotification(
+                connection.getStudent().getUser(),
+                alumniName + " mentorluk isteğinizi bu sefer kabul edemedi."
+        );
+
+        return "Connection rejected. Notification sent.";
     }
 
     public List<ConnectionResponseDTO> getConnectionsByStudent(Long studentId) {
@@ -110,6 +130,13 @@ public class ConnectionService {
                 .collect(Collectors.toList());
     }
 
+    public List<ConnectionResponseDTO> getMenteesByAlumni(Long alumniId) {
+        return connectionRepository.findByAlumniId(alumniId).stream()
+                .filter(c -> c.getStatus() == ConnectionStatus.ACCEPTED)
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private ConnectionResponseDTO mapToDTO(Connection connection) {
         return ConnectionResponseDTO.builder()
                 .id(connection.getId())
@@ -119,6 +146,7 @@ public class ConnectionService {
                 .alumniId(connection.getAlumni().getId())
                 .alumniName(connection.getAlumni().getUser().getFirstName() + " "
                         + connection.getAlumni().getUser().getLastName())
+                .alumniEmail(connection.getAlumni().getUser().getEmail())
                 .status(connection.getStatus())
                 .message(connection.getMessage())
                 .requestedAt(connection.getRequestedAt())

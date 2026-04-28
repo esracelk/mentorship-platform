@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MainLayout from './components/layout/MainLayout';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -11,11 +12,13 @@ import Profile from './pages/Profile';
 import StudentDetail from './pages/StudentDetail';
 import MyRequests from './pages/MyRequests';
 import Home from './pages/Home';
+import MyMentees from './pages/MyMentees';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <NotificationProvider>
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
@@ -31,6 +34,7 @@ function App() {
             {/* Sadece Mezunların (Mentor) Girebileceği Sayfalar */}
             <Route element={<ProtectedRoute allowedRoles={['ALUMNI']} />}>
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="my-mentees" element={<MyMentees />} />
             </Route>
 
             <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
@@ -45,6 +49,7 @@ function App() {
 
           </Route>
         </Routes>
+        </NotificationProvider>
       </BrowserRouter>
     </AuthProvider>
   );
