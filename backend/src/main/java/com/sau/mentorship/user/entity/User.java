@@ -39,6 +39,9 @@ public class User implements UserDetails {
     @Column(columnDefinition = "TEXT")
     private String aboutMe;
 
+    @Column(columnDefinition = "TEXT")
+    private String profilePhotoBase64;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
