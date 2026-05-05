@@ -65,4 +65,12 @@ public class ConnectionController {
         User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
         return ResponseEntity.ok(connectionService.getConnectionsByAlumni(user.getId()));
     }
+
+    @GetMapping("/alumni/mentees")
+    @PreAuthorize("hasRole('ALUMNI')")
+    public ResponseEntity<List<ConnectionResponseDTO>> getMentees(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername()).orElseThrow();
+        return ResponseEntity.ok(connectionService.getMenteesByAlumni(user.getId()));
+    }
 }

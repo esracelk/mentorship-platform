@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { Loader2, Paperclip, Clock, CheckCircle2, XCircle, ChevronRight, User } from 'lucide-react';
+import { Loader2, Paperclip, Clock, CheckCircle2, XCircle, ChevronRight } from 'lucide-react';
 
 const MyRequests = () => {
     const [requests, setRequests] = useState([]);
@@ -98,6 +98,15 @@ const MyRequests = () => {
                                     {req.message ? `"${req.message}"` : <span className="text-gray-400">Not eklenmemiş.</span>}
                                 </p>
                             </div>
+
+                            {req.status === 'ACCEPTED' && (
+                                <div className="mb-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-3 flex items-center gap-2">
+                                    <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                    <p className="text-green-800 text-xs font-medium">
+                                        Mentorunuz isteğinizi kabul etti! Bildirimlerinizi kontrol edin.
+                                    </p>
+                                </div>
+                            )}
 
                             <Link
                                 to={`/mentors/${req.alumniId}`}

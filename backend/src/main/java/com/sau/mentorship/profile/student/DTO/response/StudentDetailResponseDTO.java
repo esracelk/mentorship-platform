@@ -20,4 +20,5 @@ public class StudentDetailResponseDTO {
     private String experience;
     private String employmentStatus;
     private String linkedinUrl;
+    private String profilePhotoBase64;
 }

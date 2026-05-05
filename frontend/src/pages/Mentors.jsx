@@ -66,7 +66,7 @@ const Mentors = () => {
                         <div key={mentor.alumniId} className="bg-white/40 backdrop-blur-xl rounded-2xl p-6 shadow-xl border border-white/40 hover:shadow-2xl hover:scale-[1.02] transition-all flex flex-col items-center text-center">
                             <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 p-1 mb-4 shadow-lg shadow-blue-500/30">
                                 <img
-                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(mentor.fullName)}&background=ffffff&color=2563eb`}
+                                    src={mentor.profilePhotoBase64 || `https://ui-avatars.com/api/?name=${encodeURIComponent(mentor.fullName)}&background=ffffff&color=2563eb`}
                                     alt="Avatar"
                                     className="w-full h-full rounded-full border-2 border-white object-cover"
                                 />

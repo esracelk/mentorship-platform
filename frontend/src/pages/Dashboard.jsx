@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 import { Loader2, User, Check, X, Clock, MessageSquare } from 'lucide-react';
 
 const Dashboard = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(null);
+    const { fetchNotifications } = useNotifications();
 
     useEffect(() => {
         const fetchConnections = async () => {
@@ -27,10 +28,13 @@ const Dashboard = () => {
         setActionLoading(connectionId);
         try {
             await api.put(`/connections/${connectionId}/${action}`);
-            // Update UI optimistically or refetch. Let's update state directly:
-            setRequests(requests.map(req =>
-                req.id === connectionId ? { ...req, status: action === 'accept' ? 'ACCEPTED' : 'REJECTED' } : req
-            ));
+            setRequests(prev =>
+                prev.map(req =>
+                    req.id === connectionId ? { ...req, status: action === 'accept' ? 'ACCEPTED' : 'REJECTED' } : req
+                )
+            );
+            // Backend'in oluşturduğu bildirimleri güncelle
+            await fetchNotifications();
         } catch (err) {
             alert(err.response?.data?.message || "İşlem sırasında bir hata oluştu.");
         } finally {

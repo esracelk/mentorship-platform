@@ -41,4 +41,24 @@ public class UserService {
         userRepository.delete(user);
         return "Hesap başarıyla silindi.";
     }
+
+    @Transactional
+    public String uploadProfilePhoto(String email, String base64Photo) {
+        if (base64Photo == null || base64Photo.isBlank()) {
+            throw new IllegalArgumentException("Fotoğraf verisi boş olamaz.");
+        }
+        // Base64 veri boyutu kontrolü: yaklaşık 2MB (~2.7MB base64)
+        if (base64Photo.length() > 3_600_000) {
+            throw new IllegalArgumentException("Fotoğraf boyutu 2MB'ı aşamaz.");
+        }
+        User user = getLoggedInUser(email);
+        user.setProfilePhotoBase64(base64Photo);
+        userRepository.save(user);
+        return "Profil fotoğrafı güncellendi.";
+    }
+
+    public String getProfilePhoto(String email) {
+        User user = getLoggedInUser(email);
+        return user.getProfilePhotoBase64();
+    }
 }

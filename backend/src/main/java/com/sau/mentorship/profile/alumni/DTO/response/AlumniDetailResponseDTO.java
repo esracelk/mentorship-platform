@@ -16,7 +16,8 @@ public record AlumniDetailResponseDTO(
                 String currentTitle,
                 Integer graduationYear,
                 Integer yearsOfExperience,
-                String linkedinUrl
+                String linkedinUrl,
+                String profilePhotoBase64
 
 ) {
 }

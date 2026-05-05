@@ -102,6 +102,7 @@ public class StudentService {
                         studentProfile.getEmploymentStatus() != null ? studentProfile.getEmploymentStatus().name()
                                 : null)
                 .linkedinUrl(studentProfile.getLinkedinUrl())
+                .profilePhotoBase64(user.getProfilePhotoBase64())
                 .build();
     }
 }
