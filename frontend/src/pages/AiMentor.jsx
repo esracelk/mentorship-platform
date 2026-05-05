@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Sparkles, Loader2, Plus, MessageSquare, History, ChevronRight, LayoutPanelLeft } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, MessageSquare, History, LayoutPanelLeft, MoreVertical, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
-import { useAuth } from '../context/AuthContext';
 
 const MessageBubble = ({ message, isAi }) => (
   <div className={`flex ${isAi ? 'justify-start' : 'justify-end'} mb-6 animate-in fade-in slide-in-from-bottom-2 duration-300`}>
@@ -34,18 +33,13 @@ const MessageBubble = ({ message, isAi }) => (
 );
 
 const AiMentor = () => {
-  const { user } = useAuth();
   const [input, setInput] = useState('');
-  const [activeSession, setActiveSession] = useState('Genel Kariyer Rehberliği');
-  const [sessions, setSessions] = useState([
-    { id: 1, title: 'Genel Kariyer Rehberliği', date: 'Bugün' },
-    { id: 2, title: 'CV İnceleme ve Tavsiyeler', date: 'Dün' },
-    { id: 3, title: 'Mülakat Teknikleri', date: '15 Nisan' }
-  ]);
-  const [messages, setMessages] = useState([
-    { text: "Merhaba! Ben senin kariyer yolculuğunda sana rehberlik edecek AI Mentorun. Bugün senin için ne yapabilirim?", isAi: true }
-  ]);
+  const [sessions, setSessions] = useState([]);
+  const [activeSessionId, setActiveSessionId] = useState(null);
+  const [activeSessionTitle, setActiveSessionTitle] = useState('Yeni Sohbet');
+  const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [menuOpenId, setMenuOpenId] = useState(null); // Track which session's menu is open
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -55,6 +49,86 @@ const AiMentor = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isLoading]);
+
+  // Click outside to close menu
+  useEffect(() => {
+    const handler = () => setMenuOpenId(null);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const token = localStorage.getItem('token');
+  let userEmail = 'guest_user';
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      userEmail = payload.sub || 'guest_user';
+    } catch (e) {
+      console.error("Token parse hatası", e);
+    }
+  }
+
+  const createNewSession = () => {
+    const newId = crypto.randomUUID();
+    setActiveSessionId(newId);
+    setActiveSessionTitle("Yeni Sohbet");
+    setMessages([
+      { text: "Merhaba! Ben senin kariyer yolculuğunda sana rehberlik edecek AI Mentorun. Bugün senin için ne yapabilirim?", isAi: true }
+    ]);
+  };
+
+  // Fetch Sessions
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!token) return;
+      try {
+        const res = await axios.get(`http://localhost:8080/api/ai/sessions/${userEmail}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.data && res.data.length > 0) {
+          setSessions(res.data);
+          setActiveSessionId(res.data[0].id);
+          setActiveSessionTitle(res.data[0].title);
+        } else {
+          createNewSession();
+        }
+      } catch (err) {
+        console.error("Sohbetler yüklenemedi", err);
+        createNewSession();
+      }
+    };
+    fetchSessions();
+  }, [userEmail]);
+
+  // Fetch History for Active Session
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!activeSessionId || !token) return;
+      
+      if (!sessions.find(s => s.id === activeSessionId)) {
+        // Yeni açılan ama veritabanında olmayan sohbet
+        return;
+      }
+
+      try {
+        const response = await axios.get(`http://localhost:8080/api/ai/history/${activeSessionId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.data && response.data.length > 0) {
+          const loadedMessages = response.data.map(interaction => ({
+            text: interaction.content,
+            isAi: interaction.messageType === 'ASSISTANT' || interaction.messageType === 'SYSTEM'
+          }));
+          setMessages(loadedMessages);
+        }
+      } catch (error) {
+        console.error("Geçmiş sohbetler yüklenemedi:", error);
+      }
+    };
+
+    fetchHistory();
+  }, [activeSessionId, sessions, token]);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -66,29 +140,69 @@ const AiMentor = () => {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:8080/api/ai/ask', {
         question: userMessage,
-        chatId: user?.email || 'guest_user'
+        chatId: activeSessionId,
+        userEmail: userEmail
       }, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
       setMessages(prev => [...prev, { text: response.data.answer, isAi: true }]);
+      
+      // Yenile ki 'Yeni Sohbet' veritabanı başlığıyla güncellensin
+      const res = await axios.get(`http://localhost:8080/api/ai/sessions/${userEmail}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setSessions(res.data);
+      const updatedSession = res.data.find(s => s.id === activeSessionId);
+      if (updatedSession) setActiveSessionTitle(updatedSession.title);
+
     } catch (error) {
-      setMessages(prev => [...prev, { text: "Üzgünüm, şu an bağlantıda bir sorun yaşıyorum. Lütfen biraz sonra tekrar dene.", isAi: true }]);
+      setMessages(prev => [...prev, { text: "Üzgünüm, şu an bağlantıda bir sorun yaşıyorum.", isAi: true }]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeleteChat = async (e, sessionId) => {
+    e.stopPropagation();
+    try {
+      await axios.delete(`http://localhost:8080/api/ai/history/${sessionId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const remaining = sessions.filter(s => s.id !== sessionId);
+      setSessions(remaining);
+      setMenuOpenId(null);
+      
+      if (activeSessionId === sessionId) {
+        if (remaining.length > 0) {
+          setActiveSessionId(remaining[0].id);
+          setActiveSessionTitle(remaining[0].title);
+        } else {
+          createNewSession();
+        }
+      }
+    } catch (error) {
+      console.error("Sohbet silinirken hata:", error);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
   };
 
   return (
     <div className="flex h-[calc(100vh-64px)] bg-white overflow-hidden">
       
       {/* Sidebar */}
-      <div className="w-80 bg-gray-50 border-r border-gray-100 flex flex-col hidden lg:flex">
+      <div className="w-80 bg-gray-50 border-r border-gray-100 flex flex-col hidden lg:flex z-20">
         <div className="p-5">
-          <button className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-2xl text-sm font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm active:scale-95 group">
+          <button 
+            onClick={createNewSession}
+            className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 p-3 rounded-2xl text-sm font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm active:scale-95 group"
+          >
             <Plus size={18} className="text-gray-400 group-hover:text-blue-500" />
             Yeni Sohbet Başlat
           </button>
@@ -101,25 +215,52 @@ const AiMentor = () => {
           {sessions.map(session => (
             <div 
               key={session.id}
-              onClick={() => setActiveSession(session.title)}
-              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${activeSession === session.title ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+              onClick={() => {
+                setActiveSessionId(session.id);
+                setActiveSessionTitle(session.title);
+              }}
+              className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all relative group ${activeSessionId === session.id ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600 shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
             >
-              <MessageSquare size={16} className={activeSession === session.title ? 'text-blue-600' : 'text-gray-400'} />
+              <MessageSquare size={16} className={activeSessionId === session.id ? 'text-blue-600' : 'text-gray-400'} />
               <div className="flex-1 overflow-hidden">
-                <div className="text-sm font-medium truncate">{session.title}</div>
-                <div className="text-[10px] opacity-60 font-medium italic">{session.date}</div>
+                <div className="text-sm font-medium truncate pr-6">{session.title}</div>
+                <div className="text-[10px] opacity-60 font-medium italic">{session.createdAt ? formatDate(session.createdAt) : 'Bugün'}</div>
               </div>
-              <ChevronRight size={14} className={activeSession === session.title ? 'text-blue-400' : 'opacity-0'} />
+              
+              {/* 3 Nokta Menüsü (Sol Kutucuğun Sağı) */}
+              <div className={`absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity ${activeSessionId === session.id ? 'opacity-100' : ''}`}>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpenId(menuOpenId === session.id ? null : session.id);
+                  }}
+                  className={`p-1.5 rounded-md transition-colors ${activeSessionId === session.id ? 'hover:bg-blue-100 text-blue-500' : 'hover:bg-gray-200 text-gray-400'}`}
+                >
+                  <MoreVertical size={16} />
+                </button>
+
+                {menuOpenId === session.id && (
+                  <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-200">
+                    <button 
+                      onClick={(e) => handleDeleteChat(e, session.id)}
+                      className="w-full text-left px-3 py-2.5 text-[13px] text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors flex items-center gap-2 font-medium"
+                    >
+                      <Trash2 size={14} />
+                      Sohbeti Sil
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
         <div className="p-4 bg-gray-100/50 m-4 rounded-2xl border border-gray-200/50">
            <div className="flex items-center gap-2 text-xs font-bold text-gray-500 mb-1">
-              <LayoutPanelLeft size={14} /> Kariyer Durumun
+              <LayoutPanelLeft size={14} /> Dinamik Kariyer Belleği
            </div>
            <div className="text-[11px] text-gray-400 leading-tight">
-              Mentorunuz son dökümanları inceledi ve size özel tavsiyelerini hazırladı.
+              AI, yeteneklerini ve profilini bu sohbete otomatik dahil etti.
            </div>
         </div>
       </div>
@@ -133,8 +274,8 @@ const AiMentor = () => {
               <Sparkles size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="font-bold text-gray-900 text-lg leading-none mb-1">{activeSession}</h2>
-              <div className="text-xs font-medium text-blue-500">Elite Career Assistant Engaged</div>
+              <h2 className="font-bold text-gray-900 text-lg leading-none mb-1">{activeSessionTitle}</h2>
+              <div className="text-xs font-medium text-blue-500">Mentorship Platform Elite Assistant</div>
             </div>
           </div>
         </div>
@@ -152,7 +293,7 @@ const AiMentor = () => {
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                     <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                   </div>
-                  <span className="text-xs font-semibold text-gray-500">Mentorun yanıtlıyor...</span>
+                  <span className="text-xs font-semibold text-gray-500">Mentorun inceliyor...</span>
                 </div>
               </div>
             )}
@@ -165,7 +306,7 @@ const AiMentor = () => {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Mentoruna kariyer hedeflerin hakkında bir mesaj yaz..."
+              placeholder="Mentoruna kariyerin hakkında bir mesaj yaz..."
               className="w-full p-5 bg-gray-50/50 border border-transparent focus:border-blue-500 focus:bg-white rounded-[25px] outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 shadow-inner pr-16"
             />
             <button

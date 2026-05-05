@@ -9,5 +9,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ChatRequestDTO {
     private String question;
-    private String chatId;
+    private String chatId; // now acts as sessionId
+    private String userEmail;
 }

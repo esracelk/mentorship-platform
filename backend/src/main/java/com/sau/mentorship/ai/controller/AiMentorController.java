@@ -19,4 +19,20 @@ public class AiMentorController {
     public ResponseEntity<ChatResponseDTO> ask(@RequestBody ChatRequestDTO request) {
         return ResponseEntity.ok(aiMentorService.askQuestion(request));
     }
+
+    @GetMapping("/sessions/{userEmail:.+}")
+    public ResponseEntity<java.util.List<com.sau.mentorship.ai.entity.ChatSession>> getUserSessions(@PathVariable String userEmail) {
+        return ResponseEntity.ok(aiMentorService.getUserSessions(userEmail));
+    }
+
+    @GetMapping("/history/{chatId:.+}")
+    public ResponseEntity<java.util.List<com.sau.mentorship.ai.entity.Interaction>> getHistory(@PathVariable String chatId) {
+        return ResponseEntity.ok(aiMentorService.getChatHistory(chatId));
+    }
+
+    @DeleteMapping("/history/{chatId:.+}")
+    public ResponseEntity<Void> hideHistory(@PathVariable String chatId) {
+        aiMentorService.hideChatHistory(chatId);
+        return ResponseEntity.noContent().build();
+    }
 }

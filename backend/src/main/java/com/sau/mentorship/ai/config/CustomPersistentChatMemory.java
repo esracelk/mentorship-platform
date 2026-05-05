@@ -22,7 +22,7 @@ public class CustomPersistentChatMemory implements ChatMemory {
 
     @Override
     public void add(String conversationId, List<Message> messages) {
-        String sql = "INSERT INTO interaction (chat_id, message_type, content) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO interaction (chat_id, message_type, content, is_hidden) VALUES (?, ?, ?, false)";
         for (Message message : messages) {
             jdbcTemplate.update(sql, conversationId, message.getMessageType().name(), message.getText());
         }
