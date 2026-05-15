@@ -15,9 +15,15 @@ public class AiMentorController {
 
     private final AiMentorService aiMentorService;
 
-    @PostMapping("/ask")
-    public ResponseEntity<ChatResponseDTO> ask(@RequestBody ChatRequestDTO request) {
-        return ResponseEntity.ok(aiMentorService.askQuestion(request));
+    @PostMapping(value = "/ask", consumes = { org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<ChatResponseDTO> ask(
+            @RequestParam("question") String question,
+            @RequestParam("chatId") String chatId,
+            @RequestParam("userEmail") String userEmail,
+            @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file) {
+        
+        ChatRequestDTO request = new ChatRequestDTO(question, chatId, userEmail);
+        return ResponseEntity.ok(aiMentorService.askQuestion(request, file));
     }
 
     @GetMapping("/sessions/{userEmail:.+}")

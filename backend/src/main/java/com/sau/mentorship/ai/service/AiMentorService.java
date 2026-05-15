@@ -61,7 +61,7 @@ public class AiMentorService {
             # REFERENCE LIBRARY (CONTEXT):
             {context}
             """;
-    public ChatResponseDTO askQuestion(ChatRequestDTO request) {
+    public ChatResponseDTO askQuestion(ChatRequestDTO request, org.springframework.web.multipart.MultipartFile file) {
         log.info("Processing question: {} for sessionId: {}", request.getQuestion(), request.getChatId());
 
         String sessionId = request.getChatId();
@@ -98,7 +98,24 @@ public class AiMentorService {
 
         final String finalContext = context.isEmpty() ? "No specific context found in documents." : context;
 
+        // Dosya işleme (Direct Context Injection)
+        String fileContext = "";
+        if (file != null && !file.isEmpty()) {
+            try {
+                org.springframework.core.io.Resource resource = file.getResource();
+                org.springframework.ai.reader.pdf.PagePdfDocumentReader pdfReader = new org.springframework.ai.reader.pdf.PagePdfDocumentReader(resource);
+                List<Document> documents = pdfReader.get();
+                fileContext = documents.stream().map(Document::getText).collect(Collectors.joining("\n"));
+                fileContext = "\n\n[SİSTEM BİLGİSİ: Kullanıcı incelemen için bir dosya yükledi. İÇERİĞİ ŞU ŞEKİLDEDİR:]\n" + fileContext + "\n[DOSYA SONU]\n\n";
+                log.info("File successfully parsed and injected into context.");
+            } catch (Exception e) {
+                log.error("Dosya okuma hatası", e);
+            }
+        }
+
         // 2. Chat with Memory Advisor
+        String finalUserMessage = request.getQuestion() + fileContext;
+        
         String answer = chatClient.prompt()
                 .advisors(new MessageChatMemoryAdvisor(chatMemory, sessionId, 50))
                 .system(s -> s.text(promptTemplate)
@@ -108,7 +125,7 @@ public class AiMentorService {
                                 "studentRole", studentRole,
                                 "studentAbout", studentAbout
                         )))
-                .user(request.getQuestion())
+                .user(finalUserMessage)
                 .call()
                 .content();
 

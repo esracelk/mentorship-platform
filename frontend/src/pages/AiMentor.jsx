@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, Sparkles, Plus, MessageSquare, History, LayoutPanelLeft, MoreVertical, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, MessageSquare, History, LayoutPanelLeft, MoreVertical, Trash2, Paperclip, X } from 'lucide-react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
@@ -40,6 +40,8 @@ const AiMentor = () => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null); // Track which session's menu is open
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -130,25 +132,44 @@ const AiMentor = () => {
     fetchHistory();
   }, [activeSessionId, sessions, token]);
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && !selectedFile) || isLoading) return;
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { text: userMessage, isAi: false }]);
+    setMessages(prev => [...prev, { text: userMessage || '📄 Dosya Yüklendi', isAi: false }]);
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8080/api/ai/ask', {
-        question: userMessage,
-        chatId: activeSessionId,
-        userEmail: userEmail
-      }, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const formData = new FormData();
+      formData.append('question', userMessage);
+      formData.append('chatId', activeSessionId);
+      formData.append('userEmail', userEmail);
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      const response = await axios.post('http://localhost:8080/api/ai/ask', formData, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
       setMessages(prev => [...prev, { text: response.data.answer, isAi: true }]);
+      removeFile(); // Dosya gönderildikten sonra temizle
       
       // Yenile ki 'Yeni Sohbet' veritabanı başlığıyla güncellensin
       const res = await axios.get(`http://localhost:8080/api/ai/sessions/${userEmail}`, {
@@ -302,20 +323,52 @@ const AiMentor = () => {
         </div>
 
         <div className="p-6 bg-white border-t border-gray-50 lg:rounded-bl-[40px]">
-          <form onSubmit={handleSend} className="max-w-3xl mx-auto relative group">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Mentoruna kariyerin hakkında bir mesaj yaz..."
-              className="w-full p-5 bg-gray-50/50 border border-transparent focus:border-blue-500 focus:bg-white rounded-[25px] outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 shadow-inner pr-16"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-3.5 rounded-full transition-all duration-300 shadow-lg shadow-blue-100 hover:shadow-blue-300 transform active:scale-90 flex items-center justify-center"
-            >
-              <Send size={20} />
-            </button>
+          <form onSubmit={handleSend} className="max-w-3xl mx-auto relative group flex flex-col gap-2">
+            {/* Seçili Dosya Çipi (Chip) */}
+            {selectedFile && (
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-full w-max text-blue-700 animate-in slide-in-from-bottom-2">
+                <Paperclip size={14} className="text-blue-500" />
+                <span className="text-xs font-semibold max-w-[200px] truncate">{selectedFile.name}</span>
+                <button type="button" onClick={removeFile} className="hover:bg-blue-200 p-0.5 rounded-full text-blue-500 transition-colors">
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+            
+            <div className="relative flex items-center">
+              {/* Gizli Dosya Input'u */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              
+              {/* Dosya Seç Butonu */}
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute left-2 p-3 text-gray-400 hover:text-blue-500 hover:bg-gray-100 rounded-full transition-all z-10"
+              >
+                <Paperclip size={20} />
+              </button>
+
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Mentoruna kariyerin hakkında bir mesaj yaz (veya dosya ekle)..."
+                className="w-full py-5 pl-14 pr-16 bg-gray-50/50 border border-transparent focus:border-blue-500 focus:bg-white rounded-[25px] outline-none transition-all duration-300 text-gray-700 placeholder-gray-400 shadow-inner"
+              />
+              
+              <button
+                type="submit"
+                disabled={(!input.trim() && !selectedFile) || isLoading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white p-3.5 rounded-full transition-all duration-300 shadow-lg shadow-blue-100 hover:shadow-blue-300 transform active:scale-90 flex items-center justify-center"
+              >
+                <Send size={20} />
+              </button>
+            </div>
           </form>
         </div>
       </div>
